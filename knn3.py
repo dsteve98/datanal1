@@ -40,8 +40,21 @@ class Distance:
         return 1 - distance
 
     def minkowski_distance(self, p, q, n):
-        return sum([abs(x-y)** n for x, y in zip(p[:-1], q[:-1])]) ** 1/n    
+        return sum([abs(x-y)** n for x, y in zip(p[:-1], q[:-1])]) ** 1/n
 
+
+def loadDataset(filename, filename2, split, dataset=[], dataset2=[], trainingIdx=[], testIdx=[], load=1):   
+    
+    data = pd.read_csv(filename)
+    data.drop(['14'], axis=1)
+    dataset = data.values
+    minmax = dataset_minmax(dataset)
+    normalize_dataset(dataset, minmax, 2)
+    
+    data2 = pd.read_csv(filename2)
+    dataset2 = data.values
+    minmax2 = dataset_minmax(dataset2)
+    normalize_dataset(dataset2, minmax2, 1)
     
   #  with open(filename, 'r') as csvfile:
    #     lines = csv.reader(csvfile)
@@ -77,12 +90,11 @@ class Distance:
    #             testIdx.append(list(test))
 
 
-# def getDataset(dataset, dataset2, trainingSet=[], testSet=[]):
-#     print('len dataset : ' + len(dataset) + ' 
-#     for i in range(len(dataset)):
-#         trainingSet.append(dataset[i])
-#     for i in range(len(dataset2)):
-#         testSet.append(dataset2[i])
+def getDataset(dataset, dataset2, trainingSet=[], testSet=[]):
+    for i in len(dataset):
+        trainingSet.append(dataset[i])
+    for i in len(dataset2):
+        testSet.append(dataset2[i])
 
 # Find the min and max values for each column
 def dataset_minmax(dataset, stat):
@@ -98,9 +110,9 @@ def dataset_minmax(dataset, stat):
 # Rescale dataset columns to the range 0-1
 def normalize_dataset(dataset, minmax, stat):
     if(stat==1):
-        leng = len(dataset[0])-2
+        leng = len(row)
     else:
-        leng = len(dataset[0])
+        leng = len(row-1)
     for row in dataset:
         for i in range(leng):
             row[i] = (row[i] - minmax[i][0]) / (minmax[i][1] - minmax[i][0])
@@ -108,7 +120,7 @@ def normalize_dataset(dataset, minmax, stat):
 
 def getNeighbors(trainingSet, testInstance, k, mode=1,r = 1):
     distances = []
-    length = len(testInstance)
+    length = len(testInstance)-1
 
     for x in range(len(trainingSet)):
         d = Distance()
@@ -133,8 +145,8 @@ def getPrediction(neighbors):
     mean = 0
     length = len(neighbors)
     for i in neighbors:
-        i[-2] = float(i[-2])
-        mean += i[-2]
+        i[-1] = float(i[-1])
+        mean += i[-1]
     mean /= length
     return mean
 
@@ -163,7 +175,7 @@ def getAccuracy(testSet, predictions):
 def mape(actual, predicted):
     prediction_error = 0
     for i in range(len(actual)):
-        ac = float(actual[i][-2])
+        ac = float(actual[i][-1])
         print('Predicted : ' + repr(predicted[i]) + ' Actual : ' + repr(ac))
         if ac==0:
             prediction_error +=0
@@ -191,18 +203,8 @@ def main():
         loadDataset('pima-indians-diabetes.csv', kfold,
                     dataset, trainingIdx, testIdx)
     elif load == 2:
-        data = pd.read_csv('new_data_training.csv')
-        dataset = data.values
-        minmax = dataset_minmax(dataset,2)
-        normalize_dataset(dataset, minmax, 1)
-
-        data2 = pd.read_csv('new_data_testing.csv')
-        dataset2 = data2.values
-        minmax2 = dataset_minmax(dataset2,1)
-        normalize_dataset(dataset2, minmax2, 2)
-        
-        print(dataset)
-        print(dataset2)
+        loadDataset('new_data_training.csv', 'new_data-testing.csv', kfold,
+                    dataset, dataset2, trainingIdx, testIdx, load=2)
     else:
         print('Input salah')
         return
@@ -222,11 +224,9 @@ def main():
             return
 
     for i in range(kfold):
-        trainingSet = dataset
-        testSet = dataset2
-        print(trainingSet)
-        print(testSet)
-#         getDataset(dataset, dataset2, trainingSet, testSet)
+        trainingSet = []
+        testSet = []
+        getDataset(dataset, dataset2, trainingIdx[i], testIdx[i], trainingSet, testSet)
         print('Train set: ' + str(len(trainingSet)))
         print('Test set: ' + str(len(testSet)))
         # print (dataset)
@@ -239,23 +239,23 @@ def main():
             elif load == 2:
                 result = getPrediction(neighbors)
             predictions.append(result)
-            print(str(result))
-        #if load == 1:
-        #    accuracy = getAccuracy(testSet, predictions)
-        #    totalAccuracy += accuracy
-        #    print('Accuracy: ' + str(accuracy) + '%')
-        #elif load == 2:
-          #  Mape = mape(testSet, predictions)
-          #  totalMape += Mape
-          #  print('MAPE: ' + str(Mape))
-          #  print('\n')
+            # print('> predicted=' + str(result) + ', actual=' + str(testSet[x][-1]))
+        if load == 1:
+            accuracy = getAccuracy(testSet, predictions)
+            totalAccuracy += accuracy
+            print('Accuracy: ' + str(accuracy) + '%')
+        elif load == 2:
+            Mape = mape(testSet, predictions)
+            totalMape += Mape
+            print('MAPE: ' + str(Mape))
+            print('\n')
 
-   # if load == 1:
-    #    print('\nTotal Accuracy: ' + str(totalAccuracy/kfold) + '%')
-    #elif load == 2:
-      #  mean = totalMape/kfold
-       # print('\nTotal Mean Absolute Percentage Error: ' + str(mean)+'%')
-        #print('Total Accuracy: ' + str(100-mean) + '%')
+    if load == 1:
+        print('\nTotal Accuracy: ' + str(totalAccuracy/kfold) + '%')
+    elif load == 2:
+        mean = totalMape/kfold
+        print('\nTotal Mean Absolute Percentage Error: ' + str(mean)+'%')
+        print('Total Accuracy: ' + str(100-mean) + '%')
 
 
 main()
