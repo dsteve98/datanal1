@@ -9,9 +9,11 @@ df = pd.read_excel(file)
 df.drop(['Appliances'], axis = 1, inplace = True)
 df.drop(['lights'], axis = 1, inplace = True)
 
-print(df.head(5))
+#print(df.head(5))
 
 print(df.dtypes)
+
+print(df.describe())
 
 df = df.replace('?',np.NaN)
 df = df.replace('',np.NaN)
