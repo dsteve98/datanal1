@@ -156,6 +156,7 @@ def mape(actual, predicted):
     prediction_error = 0
     for i in range(len(actual)):
         ac = float(actual[i][-2])
+        print('Predicted : ' + repr(predicted[i]) + ' Actual : ' + repr(ac))
         if ac==0:
             prediction_error +=0
         else:
@@ -226,6 +227,7 @@ def main():
             Mape = mape(testSet, predictions)
             totalMape += Mape
             print('MAPE: ' + str(Mape))
+            print('\n')
 
     if load == 1:
         print('\nTotal Accuracy: ' + str(totalAccuracy/kfold) + '%')
