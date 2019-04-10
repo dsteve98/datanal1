@@ -10,6 +10,7 @@ import random
 import math
 import operator
 import numpy as np
+import pandas as pd
 from sklearn.model_selection import KFold
 from sklearn.model_selection import StratifiedKFold
 
@@ -42,44 +43,16 @@ class Distance:
         return sum([abs(x-y)** n for x, y in zip(p[:-1], q[:-1])]) ** 1/n
 
 
-def loadDataset(filename, split, dataset=[], trainingIdx=[], testIdx=[], load=1):
-    with open(filename, 'r') as csvfile:
-        lines = csv.reader(csvfile)
-        dataset[:] = list(lines)
-        X = []
-        Y = []
-        # Convert String to Float
-        for x in range(len(dataset)):
-            for y in range(len(dataset[x])-1):
-                dataset[x][y] = float(dataset[x][y])
-
-        # Normalize
-        # Calculate min and max for each column
-        minmax = dataset_minmax(dataset)
-        # Normalize columns
-        normalize_dataset(dataset, minmax)
-        # Split Classifier with others,X = Others, Y = Classifiers,
-        for x in range(len(dataset)):
-            X.append(dataset[x][:-2])
-            Y.append(dataset[x][-2])
-        # Get Idx of training and test set with StratifiedKFold
-        if load == 1:
-            kf = StratifiedKFold(n_splits=split)
-            for train, test in kf.split(X, Y):
-                trainingIdx.append(list(train))
-                testIdx.append(list(test))
-        elif load == 2:
-            kf = KFold(n_splits=split)
-            for train, test in kf.split(dataset):
-                trainingIdx.append(list(train))
-                testIdx.append(list(test))
+#def loadDataset(filename, split, dataset=[], trainingIdx=[], testIdx=[], load=1):
 
 
-def getDataset(dataset, trainingIdx, testIdx, trainingSet=[], testSet=[]):
-    for i in trainingIdx:
-        trainingSet.append(dataset[i])
-    for i in testIdx:
-        testSet.append(dataset[i])
+    # Normalize
+            
+#def getDataset(dataset, trainingIdx, testIdx, trainingSet=[], testSet=[]):
+#    for i in trainingIdx:
+#        trainingSet.append(dataset[i])
+#    for i in testIdx:
+#        testSet.append(dataset[i])
 
 # Find the min and max values for each column
 def dataset_minmax(dataset):
@@ -174,13 +147,21 @@ def main():
     totalAccuracy = 0
     totalMape = 0
     r = 1
-    print('1. Klasifikasi - Pima Indians Diabetes')
+    print('1. Klasifikasi')
     print('2. Training data regresi')
     load = int(input('Pilih data (1-2) > '))
     # load = 2
     if load == 1:
-        loadDataset('pima-indians-diabetes.csv', kfold,
-                    dataset, trainingIdx, testIdx)
+        data = pd.read_csv('train.csv')
+        data.drop(['id'], axis=1)
+        dataset = data.values
+        print(dataset)
+        X = []
+        Y = []
+        # Convert String to Float
+        for x in range(len(dataset)):
+            for y in range(len(dataset[x])-1):
+                dataset[x][y] = float(dataset[x][y])
     elif load == 2:
         loadDataset('new_data_training.csv', kfold,
                     dataset, trainingIdx, testIdx, load=2)
@@ -202,10 +183,36 @@ def main():
             print('Input salah')
             return
 
+          # Calculate min and max for each column
+    minmax = dataset_minmax(dataset)
+    # Normalize columns
+    normalize_dataset(dataset, minmax)
+    # Split Classifier with others,X = Others, Y = Classifiers,
+    for x in range(len(dataset)):
+        X.append(dataset[x][:-1])
+        Y.append(dataset[x][-1])
+    # Get Idx of training and test set with StratifiedKFold
+    if load == 1:
+        kf = StratifiedKFold(n_splits=kfold)
+        for train, test in kf.split(X, Y):
+            trainingIdx.append(list(train))
+            testIdx.append(list(test))
+        print('trIdx = ' + repr(len(trainingIdx)) + ' testIdx = ' + repr(len(testIdx)))
+    elif load == 2:
+        kf = KFold(n_splits=split)
+        for train, test in kf.split(dataset):
+            trainingIdx.append(list(train))
+            testIdx.append(list(test))
     for i in range(kfold):
         trainingSet = []
         testSet = []
-        getDataset(dataset, trainingIdx[i], testIdx[i], trainingSet, testSet)
+        #getDataset(dataset, trainingIdx[i], testIdx[i], trainingSet, testSet)
+        trainIdx = trainingIdx[i]
+        testIdx = testIdx[i]
+        for i in trainIdx:
+            trainingSet.append(dataset[i])
+        for i in testIdx:
+            testSet.append(dataset[i])
         print('Train set: ' + str(len(trainingSet)))
         print('Test set: ' + str(len(testSet)))
         # print (dataset)
